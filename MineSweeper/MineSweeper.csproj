@@ -57,6 +57,7 @@
     <Reference Include="System.EnterpriseServices" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="packages.config" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>
@@ -65,6 +66,16 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="default.css" />
+    <Content Include="Images\Coverred.png" />
+    <Content Include="Images\Flagged.png" />
+    <Content Include="Images\MineExploaded.png" />
+    <Content Include="Images\MineExploading.png" />
+    <Content Include="Images\MineRevealed.png" />
+    <Content Include="Images\Uncoverred.png" />
+    <Content Include="MineSweeper.html" />
+    <Content Include="Scripts\knockout-3.2.0.debug.js" />
+    <Content Include="Scripts\knockout-3.2.0.js" />
     <Content Include="Web.config" />
   </ItemGroup>
   <ItemGroup>
