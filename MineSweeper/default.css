@@ -1,0 +1,23 @@
+﻿
+BODY {
+    cursor: default;
+}
+
+TABLE {
+    border-spacing: 0;
+}
+
+TD {
+    border: solid 1px black;
+}
+
+.cell {
+    background-size: cover;
+    display: inline-block;
+    width:24px;
+    height: 24px;
+}
+
+.coverred {
+    background-image: url('Images/Coverred.png');
+}
