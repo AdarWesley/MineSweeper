@@ -16,8 +16,28 @@ TD {
     display: inline-block;
     width:24px;
     height: 24px;
+
+    text-align: center;
+    vertical-align: middle;
+    font-size: 20px;
+}
+
+.cell1 {
+    color: blue;
 }
 
 .coverred {
     background-image: url('Images/Coverred.png');
+}
+
+.uncoverred {
+    background-image: url('Images/Uncoverred.png');
+}
+
+.exploded {
+    background-image: url('Images/MineExploaded.png');
+}
+
+.flagged {
+    background-image: url('Images/Flagged.png');
 }
