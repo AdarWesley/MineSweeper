@@ -97,8 +97,6 @@
                         if (!evt.shiftKey) {
                             cell.uncover();
                         }
-                    } else {
-
                     }
                 } else if (evt.which === 3 && cell.isCoverred()){
                     cell.toggleFlag();
@@ -147,6 +145,13 @@
 
         var rootVM = new ViewModel();
         rootVM.Rows()[0].Cols()[1].hasMine(true);
+        rootVM.Rows()[0].Cols()[2].hasMine(true);
+        rootVM.Rows()[0].Cols()[3].hasMine(true);
+        rootVM.Rows()[0].Cols()[4].hasMine(true);
+
+        rootVM.Rows()[2].Cols()[2].hasMine(true);
+        rootVM.Rows()[2].Cols()[3].hasMine(true);
+        rootVM.Rows()[2].Cols()[4].hasMine(true);
 
         ko.applyBindings(rootVM);
     </script>

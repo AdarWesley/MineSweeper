@@ -27,6 +27,35 @@ TD {
     color: blue;
 }
 
+.count2 {
+    color: green;
+}
+
+.count3 {
+    color: darkred;
+}
+
+.count4 {
+    color: darkblue;
+}
+
+.count5 {
+    color: darkviolet;
+}
+
+.count6 {
+    color: blue;
+}
+
+.count7 {
+    color: blue;
+}
+
+.count8 {
+    color: blue;
+}
+
+
 .coverred {
     background-image: url('Images/Coverred.png');
 }
