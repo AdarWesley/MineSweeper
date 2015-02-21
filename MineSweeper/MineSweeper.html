@@ -18,170 +18,194 @@
         </tbody>
     </table>
     <script type="text/javascript">
-        var ROWS = 5;
-        var COLS = 5;
+        (function (ROWS, COLS, MINES) {
+            var rootVM;
 
-        ko.bindingHandlers.element = {
-            init: function (element, valueAccessor, modelElement, o) {
-                o.element(element);
-            }
-        };
+            ko.bindingHandlers.element = {
+                init: function (element, valueAccessor, modelElement, o) {
+                    o.element(element);
+                }
+            };
 
-        function Cell(rowNum, colNum) {
-            var self = this;
-            self.element = ko.observable();
-            self.row = ko.observable(rowNum);
-            self.col = ko.observable(colNum);
+            function Cell(rowNum, colNum) {
+                var self = this;
+                self.element = ko.observable();
+                self.row = ko.observable(rowNum);
+                self.col = ko.observable(colNum);
 
-            self.hasMine = ko.observable(false);
-            self.isCoverred = ko.observable(true);
-            self.isFlagged = ko.observable(false);
+                self.hasMine = ko.observable(false);
+                self.isCoverred = ko.observable(true);
+                self.isFlagged = ko.observable(false);
 
-            self.getNieghbors = ko.computed(function () {
-                var nieghbors = [];
-                for (var i = self.row() - 1; i <= self.row() + 1; i++) {
-                    for (var j = self.col() - 1; j <= self.col() + 1; j++) {
-                        if (i < 0 || j < 0 || i >= ROWS || j >= COLS ||
-                            (i === self.row() && j === self.col())) {
-                            continue;
+                self.getNieghbors = ko.computed(function () {
+                    var nieghbors = [];
+                    for (var i = self.row() - 1; i <= self.row() + 1; i++) {
+                        for (var j = self.col() - 1; j <= self.col() + 1; j++) {
+                            if (i < 0 || j < 0 || i >= ROWS || j >= COLS ||
+                                (i === self.row() && j === self.col())) {
+                                continue;
+                            }
+                            nieghbors.push(rootVM.Rows()[i].Cols()[j]);
                         }
-                        nieghbors.push(rootVM.Rows()[i].Cols()[j]);
                     }
-                }
-                return nieghbors;
-            }, rootVM, { deferEvaluation: true });
-            
-            self.getNieghborsWithMines = ko.computed(function(){
-                var nieghborsWithMines = ko.utils.arrayFilter(this.getNieghbors(), function(nieghbor){ return nieghbor.hasMine(); });
-                return nieghborsWithMines;
-            }, self, { deferEvaluation: true });
+                    return nieghbors;
+                }, rootVM, { deferEvaluation: true });
 
-            self.nieghborMineCount = ko.computed(function () {
-                var mineCount = self.getNieghborsWithMines().length;
-                return mineCount;
-            }, self, { deferEvaluation: true });
+                self.getNieghborsWithMines = ko.computed(function () {
+                    var nieghborsWithMines = ko.utils.arrayFilter(this.getNieghbors(), function (nieghbor) { return nieghbor.hasMine(); });
+                    return nieghborsWithMines;
+                }, self, { deferEvaluation: true });
 
-            self.nieghborMineCountStr = ko.computed(function () {
-                var mineCount = self.nieghborMineCount();
-                mineCount = (mineCount > 0 && !self.isCoverred()) ? "" + mineCount : "";
-                return mineCount;
-            }, self, { deferEvaluation: true });
+                self.nieghborMineCount = ko.computed(function () {
+                    var mineCount = self.getNieghborsWithMines().length;
+                    return mineCount;
+                }, self, { deferEvaluation: true });
 
-            self.mineCountCss = ko.computed(function () {
-                var nmc = self.nieghborMineCount();
-                var css = (nmc > 0) ? "count" + nmc : "";
-                if (nmc > 0) {
-                    $(self.element()).addClass(css);
-                }
-                return css;
-            }, self, { deferEvaluation: true });
+                self.nieghborMineCountStr = ko.computed(function () {
+                    var mineCount = self.nieghborMineCount();
+                    mineCount = (mineCount > 0 && !self.isCoverred()) ? "" + mineCount : "";
+                    return mineCount;
+                }, self, { deferEvaluation: true });
 
-            self.cssClass = ko.computed(function(){
-                var css = "cell";
-                if (self.isCoverred()){
-                    if (self.isFlagged()){
-                        css += " flagged";
-                    } else {
-                        css += " coverred";
+                self.mineCountCss = ko.computed(function () {
+                    var nmc = self.nieghborMineCount();
+                    var css = (nmc > 0) ? "count" + nmc : "";
+                    if (nmc > 0) {
+                        $(self.element()).addClass(css);
                     }
-                } else {
-                    if (self.hasMine()){
-                        css += " exploded";
-                    } else {
-                        css += " uncoverred " + self.mineCountCss();
-                    }
-                }
+                    return css;
+                }, self, { deferEvaluation: true });
 
-                return css;
-            }, self, { deferEvaluation: true});
-
-            self.cellClick = function (cell, evt) {
-                //alert("Btn: " + evt.which + ", Shft: " + evt.shiftKey + ", Ctrl: " + evt.ctrlKey);
-                if (evt.which === 1) {
-                    if (cell.isCoverred()) {
-                        if (!evt.shiftKey) {
-                            cell.uncover();
+                self.cssClass = ko.computed(function () {
+                    var css = "cell";
+                    if (self.isCoverred()) {
+                        if (self.isFlagged()) {
+                            css += " flagged";
+                        } else {
+                            css += " coverred";
                         }
                     } else {
-                        if (evt.shiftKey) {
-                            var nieghborsWithMines = self.getNieghborsWithMines();
-                            if (nieghborsWithMines.length > 0) {
-                                var flaggedNieghborsWithMines =
-                                    ko.utils.arrayFilter(nieghborsWithMines, function (nieghbor) { return nieghbor.isFlagged(); });
-                                if (nieghborsWithMines.length === flaggedNieghborsWithMines.length) {
-                                    self.uncoverAllNieghbors();
+                        if (self.hasMine()) {
+                            css += " exploded";
+                        } else {
+                            css += " uncoverred " + self.mineCountCss();
+                        }
+                    }
+
+                    return css;
+                }, self, { deferEvaluation: true });
+
+                self.cellClick = function (cell, evt) {
+                    //alert("Btn: " + evt.which + ", Shft: " + evt.shiftKey + ", Ctrl: " + evt.ctrlKey);
+                    if (evt.which === 1) {
+                        if (cell.isCoverred()) {
+                            if (!evt.shiftKey) {
+                                cell.uncover();
+                            }
+                        } else {
+                            if (evt.shiftKey) {
+                                var nieghborsWithMines = self.getNieghborsWithMines();
+                                if (nieghborsWithMines.length > 0) {
+                                    var flaggedNieghborsWithMines =
+                                        ko.utils.arrayFilter(nieghborsWithMines, function (nieghbor) { return nieghbor.isFlagged(); });
+                                    if (nieghborsWithMines.length === flaggedNieghborsWithMines.length) {
+                                        self.uncoverAllNieghbors();
+                                    }
                                 }
                             }
                         }
+                    } else if (evt.which === 3 && cell.isCoverred()) {
+                        cell.toggleFlag();
                     }
-                } else if (evt.which === 3 && cell.isCoverred()){
-                    cell.toggleFlag();
                 }
-            }
 
-            self.uncover = function () {
-                if (!self.hasMine()) {
-                    $(self.element()).switchClass("coverred", "uncoverred");
-                } else {
-                    $(self.element()).switchClass("coverred", "exploded");
+                self.uncover = function () {
+                    if (!self.hasMine()) {
+                        $(self.element()).switchClass("coverred", "uncoverred");
+                    } else {
+                        $(self.element()).switchClass("coverred", "exploded");
+                    }
+                    self.isCoverred(false);
                 }
-                self.isCoverred(false);
-            }
 
-            self.uncoverAllNieghbors = function () {
-                var nieghbors = self.getNieghbors();
-                ko.utils.arrayForEach(nieghbors, function (nieghbor) {
-                    if (nieghbor.isCoverred() && !nieghbor.isFlagged()) {
-                        nieghbor.uncover();
-                        if (nieghbor.nieghborMineCount() === 0) {
-                            nieghbor.uncoverAllNieghbors();
+                self.uncoverAllNieghbors = function () {
+                    var nieghbors = self.getNieghbors();
+                    ko.utils.arrayForEach(nieghbors, function (nieghbor) {
+                        if (nieghbor.isCoverred() && !nieghbor.isFlagged()) {
+                            nieghbor.uncover();
+                            if (nieghbor.nieghborMineCount() === 0) {
+                                nieghbor.uncoverAllNieghbors();
+                            }
                         }
+                    });
+                }
+
+                self.toggleFlag = function () {
+                    self.isFlagged(!self.isFlagged());
+                    if (self.isFlagged()) {
+                        $(self.element()).switchClass("coverred", "flagged");
+                    } else {
+                        $(self.element()).switchClass("flagged", "coverred");
                     }
-                });
+                }
+
+                return self;
             }
 
-            self.toggleFlag = function () {
-                self.isFlagged(!self.isFlagged());
-                if (self.isFlagged()) {
-                    $(self.element()).switchClass("coverred", "flagged");
-                } else {
-                    $(self.element()).switchClass("flagged", "coverred");
+            function Row(rowNum) {
+                var self = this;
+                self.Cols = ko.observableArray();
+                for (var i = 0; i < COLS; i++) {
+                    self.Cols().push(new Cell(rowNum, i));
+                }
+                return self;
+            }
+
+            function ViewModel() {
+                var self = this;
+                self.Rows = ko.observableArray()
+                for (var i = 0; i < ROWS; i++) {
+                    self.Rows().push(new Row(i));
+                }
+
+                return self;
+            };
+
+            function getRandomInt(min, max) {
+                return Math.floor(Math.random() * (max - min + 1)) + min;
+            }
+
+            function AddMine(vm, totalCells) {
+                var added = false;
+
+                while (!added) {
+                    var randomIndex = getRandomInt(0, totalCells - 1);
+                    var row = Math.floor(randomIndex / COLS);
+                    var col = randomIndex % COLS;
+
+                    if (!vm.Rows()[row].Cols()[col].hasMine()) {
+                        added = true;
+                        vm.Rows()[row].Cols()[col].hasMine(true);
+                    }
                 }
             }
 
-            return self;
-        }
+            function InitializeMines(vm) {
+                var totalCells = ROWS * COLS;
 
-        function Row(rowNum) {
-            var self = this;
-            self.Cols = ko.observableArray();
-            for (var i = 0; i < COLS; i++) {
-                self.Cols().push(new Cell(rowNum, i));
-            }
-            return self;
-        }
-
-        function ViewModel() {
-            var self = this;
-            self.Rows = ko.observableArray()
-            for (var i = 0; i < ROWS; i++) {
-                self.Rows().push(new Row(i));
+                for (var i = 0; i < MINES; i++) {
+                    AddMine(vm, totalCells);
+                }
             }
 
-            return self;
-        };
+            function InitializeGame() {
+                rootVM = new ViewModel();
+                InitializeMines(rootVM);
+                ko.applyBindings(rootVM);
+            }
 
-        var rootVM = new ViewModel();
-        rootVM.Rows()[0].Cols()[1].hasMine(true);
-        rootVM.Rows()[0].Cols()[2].hasMine(true);
-        rootVM.Rows()[0].Cols()[3].hasMine(true);
-        rootVM.Rows()[0].Cols()[4].hasMine(true);
-
-        rootVM.Rows()[2].Cols()[2].hasMine(true);
-        rootVM.Rows()[2].Cols()[3].hasMine(true);
-        rootVM.Rows()[2].Cols()[4].hasMine(true);
-
-        ko.applyBindings(rootVM);
+            InitializeGame();
+        })(16, 30, 100);
     </script>
 </body>
 </html>
