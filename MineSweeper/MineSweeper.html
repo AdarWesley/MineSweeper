@@ -1,7 +1,9 @@
 ﻿<!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-    <title></title>
+    <title>Minesweeper</title>
+    <script src="Scripts/jquery-1.6.4.js"></script>
+    <script src="Scripts/jquery-ui-1.11.3.js"></script>
     <script src="Scripts/knockout-3.2.0.debug.js"></script>
     <link href="default.css" rel="stylesheet" />
 </head>
@@ -9,32 +11,114 @@
     <table>
         <tbody data-bind="foreach: Rows">
             <tr data-bind="foreach: Cols">
-                <td><a data-bind="click: cellClick, event: {contextmenu: cellClick }"><span data-bind="css: calcClass">.</span></a></td>
+                <td><a data-bind="click: cellClick, event: {contextmenu: cellClick }">
+                        <span data-bind="element: $element, text: nieghborMineCount, css: cssClass">.</span>
+                    </a>
+                </td>
         </tbody>
     </table>
     <script type="text/javascript">
         var ROWS = 5;
         var COLS = 5;
 
+        ko.bindingHandlers.element = {
+            init: function (element, valueAccessor, modelElement, o) {
+                o.element(element);
+            }
+        };
+
         function Cell(rowNum, colNum) {
             var self = this;
+            self.element = ko.observable();
             self.row = ko.observable(rowNum);
             self.col = ko.observable(colNum);
 
             self.hasMine = ko.observable(false);
             self.isCoverred = ko.observable(true);
+            self.isFlagged = ko.observable(false);
 
-            self.lable = ko.computed(function () {
-                return self.row() + "." + self.col();
-            });
+            self.getNieghbors = ko.computed(function () {
+                var nieghbors = [];
+                for (var i = self.row() - 1; i <= self.row() + 1; i++) {
+                    for (var j = self.col() - 1; j <= self.col() + 1; j++) {
+                        if (i < 0 || j < 0 || i >= ROWS || j >= COLS ||
+                            (i === self.row() && j === self.col())) {
+                            continue;
+                        }
+                        nieghbors.push(rootVM.Rows()[i].Cols()[j]);
+                    }
+                }
+                return nieghbors;
+            }, rootVM, { deferEvaluation: true });
 
-            self.calcClass = ko.computed(function () {
-                return "cell coverred";
-            });
+            self.nieghborMineCount = ko.computed(function () {
+                var mineCount = 0;
+                ko.utils.arrayForEach(this.getNieghbors(), function (nieghbor) {
+                    if (nieghbor.hasMine()) {
+                        mineCount++;
+                    }
+                });
+                mineCount = (mineCount > 0 && !self.isCoverred()) ? "" + mineCount : "";
+                return mineCount;
+            }, self, { deferEvaluation: true });
+
+            self.mineCountCss = ko.computed(function () {
+                var nmc = self.nieghborMineCount();
+                var css = (nmc > 0) ? "count" + nmc : "";
+                if (nmc > 0) {
+                    $(self.element()).addClass(css);
+                }
+                return css;
+            }, self, { deferEvaluation: true });
+
+            self.cssClass = ko.computed(function(){
+                var css = "cell";
+                if (self.isCoverred()){
+                    if (self.isFlagged()){
+                        css += " flagged";
+                    } else {
+                        css += " coverred";
+                    }
+                } else {
+                    if (self.hasMine()){
+                        css += " exploded";
+                    } else {
+                        css += " uncoverred " + self.mineCountCss();
+                    }
+                }
+
+                return css;
+            }, self, { deferEvaluation: true});
 
             self.cellClick = function (cell, evt) {
-                alert("Btn: " + evt.which + ", Shft: " + evt.shiftKey + ", Ctrl: " + evt.ctrlKey);
-                return false;
+                //alert("Btn: " + evt.which + ", Shft: " + evt.shiftKey + ", Ctrl: " + evt.ctrlKey);
+                if (evt.which === 1) {
+                    if (cell.isCoverred()) {
+                        if (!evt.shiftKey) {
+                            cell.uncover();
+                        }
+                    }
+                } else if (evt.which === 3 && cell.isCoverred()){
+                    cell.toggleFlag();
+                }
+            }
+
+            self.uncover = function () {
+                if (!self.hasMine()) {
+                    $(self.element()).switchClass("coverred", "uncoverred");
+                } else {
+                    $(self.element()).switchClass("coverred", "exploded");
+                }
+                self.isCoverred(false);
+            }
+
+            self.toggleFlag = function () {
+                self.isFlagged(!self.isFlagged());
+                if (self.isFlagged()) {
+                    $(self.element()).switchClass("coverred", "flagged");
+                } else {
+                    $(self.element()).switchClass("flagged", "coverred");
+                }
             }
 
             return self;
@@ -55,10 +139,21 @@
             for (var i = 0; i < ROWS; i++) {
                 self.Rows().push(new Row(i));
             }
+
             return self;
         };
 
-        ko.applyBindings(new ViewModel());
+        var rootVM = new ViewModel();
+        rootVM.Rows()[0].Cols()[1].hasMine(true);
+        rootVM.Rows()[0].Cols()[2].hasMine(true);
+        rootVM.Rows()[0].Cols()[3].hasMine(true);
+        rootVM.Rows()[0].Cols()[4].hasMine(true);
+
+        rootVM.Rows()[2].Cols()[2].hasMine(true);
+        rootVM.Rows()[2].Cols()[3].hasMine(true);
+        rootVM.Rows()[2].Cols()[4].hasMine(true);
+
+        ko.applyBindings(rootVM);
     </script>
 </body>
 </html>
